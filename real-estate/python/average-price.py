@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from datetime import datetime, timedelta
 
 json_url = 'https://raw.githubusercontent.com/bogdanfazakas/datasets/refs/heads/main/data.json'
 output_folder = '/data/outputs'
@@ -19,6 +20,17 @@ def compute_avg_price_by_rooms(url):
         avg_prices_by_zone = {}
         avg_prices_by_proptype = {}
         avg_prices_by_baths = {}
+        avg_prices_by_date_range = {
+            "last_month": {"totalPrice": 0, "count": 0},
+            "last_3_months": {"totalPrice": 0, "count": 0},
+            "last_6_months": {"totalPrice": 0, "count": 0}
+        }
+
+        # Prepare cutoff dates
+        now = datetime.utcnow()
+        one_month_ago = now - timedelta(days=30)
+        three_months_ago = now - timedelta(days=90)
+        six_months_ago = now - timedelta(days=180)
 
         for prop in properties:
             info = prop.get("info", {})
@@ -27,80 +39,70 @@ def compute_avg_price_by_rooms(url):
             zone = info.get("zone")
             proptype = info.get("type")
             baths = info.get("bathroomsNo")
+            created = info.get("created")
 
             if price is None or rooms_no is None:
                 continue
 
             if rooms_no:
                 if rooms_no not in avg_prices_by_rooms:
-                    avg_prices_by_rooms[rooms_no] = {
-                        "totalPrice": 0,
-                        "count": 0
-                    }
-
+                    avg_prices_by_rooms[rooms_no] = {"totalPrice": 0, "count": 0}
                 avg_prices_by_rooms[rooms_no]["totalPrice"] += price
                 avg_prices_by_rooms[rooms_no]["count"] += 1
 
             if zone:
                 if zone not in avg_prices_by_zone:
-                    avg_prices_by_zone[zone] = {
-                        "totalPrice": 0,
-                        "count": 0
-                    }
-
+                    avg_prices_by_zone[zone] = {"totalPrice": 0, "count": 0}
                 avg_prices_by_zone[zone]["totalPrice"] += price
                 avg_prices_by_zone[zone]["count"] += 1
 
             if proptype:
                 if proptype not in avg_prices_by_proptype:
-                    avg_prices_by_proptype[proptype] = {
-                        "totalPrice": 0,
-                        "count": 0
-                    }
-
+                    avg_prices_by_proptype[proptype] = {"totalPrice": 0, "count": 0}
                 avg_prices_by_proptype[proptype]["totalPrice"] += price
                 avg_prices_by_proptype[proptype]["count"] += 1
 
             if baths:
                 if baths not in avg_prices_by_baths:
-                    avg_prices_by_baths[baths] = {
-                        "totalPrice": 0,
-                        "count": 0
-                    }
-
+                    avg_prices_by_baths[baths] = {"totalPrice": 0, "count": 0}
                 avg_prices_by_baths[baths]["totalPrice"] += price
                 avg_prices_by_baths[baths]["count"] += 1
 
+            if created:
+                try:
+                    created_dt = datetime.strptime(created, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    if created_dt >= six_months_ago:
+                        avg_prices_by_date_range["last_6_months"]["totalPrice"] += price
+                        avg_prices_by_date_range["last_6_months"]["count"] += 1
+                    if created_dt >= three_months_ago:
+                        avg_prices_by_date_range["last_3_months"]["totalPrice"] += price
+                        avg_prices_by_date_range["last_3_months"]["count"] += 1
+                    if created_dt >= one_month_ago:
+                        avg_prices_by_date_range["last_month"]["totalPrice"] += price
+                        avg_prices_by_date_range["last_month"]["count"] += 1
+                except ValueError:
+                    pass  # skip malformed date
 
-        # Finalize average calculation
-        for rooms_no, stats in avg_prices_by_rooms.items():
-            avg = stats["totalPrice"] / stats["count"]
-            avg_prices_by_rooms[rooms_no]["averagePrice"] = round(avg, 2)
-
-        for zone, stats in avg_prices_by_zone.items():
-            avg = stats["totalPrice"] / stats["count"]
-            avg_prices_by_zone[zone]["averagePrice"] = round(avg, 2)
-
-        for proptype, stats in avg_prices_by_proptype.items():
-            avg = stats["totalPrice"] / stats["count"]
-            avg_prices_by_proptype[proptype]["averagePrice"] = round(avg, 2)
-
-        for baths, stats in avg_prices_by_baths.items():
-            avg = stats["totalPrice"] / stats["count"]
-            avg_prices_by_baths[baths]["averagePrice"] = round(avg, 2)
+        # Finalize average calculations
+        for stats in avg_prices_by_rooms.values():
+            stats["averagePrice"] = round(stats["totalPrice"] / stats["count"], 2)
+        for stats in avg_prices_by_zone.values():
+            stats["averagePrice"] = round(stats["totalPrice"] / stats["count"], 2)
+        for stats in avg_prices_by_proptype.values():
+            stats["averagePrice"] = round(stats["totalPrice"] / stats["count"], 2)
+        for stats in avg_prices_by_baths.values():
+            stats["averagePrice"] = round(stats["totalPrice"] / stats["count"], 2)
+        for stats in avg_prices_by_date_range.values():
+            stats["averagePrice"] = round(stats["totalPrice"] / stats["count"], 2) if stats["count"] > 0 else None
 
         # Write to output file
         os.makedirs(output_folder, exist_ok=True)
-        # with open(output_file, "w") as f:
-        #     json.dump(avg_prices_by_rooms, f, indent=2)
-
-        # print("✅ Results written to:", output_file)
-        # print("📊 Avg Prices by Rooms:", avg_prices_by_rooms)
         final_output = {
             "avg_prices_by_rooms": avg_prices_by_rooms,
             "avg_prices_by_zone": avg_prices_by_zone,
             "avg_prices_by_proptype": avg_prices_by_proptype,
-            "avg_prices_by_bathrooms": avg_prices_by_baths
+            "avg_prices_by_bathrooms": avg_prices_by_baths,
+            "avg_prices_by_date_range": avg_prices_by_date_range
         }
 
         with open(output_file, "w") as f:

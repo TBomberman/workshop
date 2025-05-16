@@ -1,3 +1,39 @@
+# Real Estate Price Analysis Algorithm
+
+This project computes average real estate prices based on property metadata such as number of rooms, location, property type, and bathrooms — and now includes **time-based filtering**, showing how the algorithm has evolved from its original version.
+
+---
+
+## 🚀 Improvements Over the Original Version
+
+### ✅ Original Capabilities
+- Fetches property listings from a remote JSON endpoint.
+- Computes **average price by number of rooms**.
+- Outputs results to a JSON file.
+
+---
+
+### 🔧 New Features Added
+
+#### 1. 📍 **Average Price by Zone**
+Groups prices by the `zone` field and calculates average prices per geographic location.
+
+#### 2. 🏠 **Average Price by Property Type**
+Includes categorization by `Apartment`, `Villa`, `Townhouse`, etc., using the `type` field.
+
+#### 3. 🚿 **Average Price by Bathrooms**
+Adds analysis by `bathroomsNo` to assess pricing for different property sizes.
+
+#### 4. 🕒 **Average Price by Date Range**
+NEW feature that adds **temporal filtering**:
+- **Last 1 Month**
+- **Last 3 Months**
+- **Last 6 Months**
+
+This allows tracking of **market trends** over time, using the `created` timestamp in the dataset.
+
+
+
 # Ocean Protocol Hands-On Workshop
 
 Welcome to the Ocean Protocol Hands-On Workshop! This workshop is designed to give you hands-on experience with Ocean Protocol's technology stack and help you build real-world applications.
