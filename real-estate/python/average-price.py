@@ -39,7 +39,7 @@ def compute_avg_price_by_rooms(url):
             zone = info.get("zone")
             proptype = info.get("type")
             baths = info.get("bathroomsNo")
-            created = info.get("created")
+            created = info.get("createdOn")
 
             if price is None or rooms_no is None:
                 continue
@@ -70,7 +70,8 @@ def compute_avg_price_by_rooms(url):
 
             if created:
                 try:
-                    created_dt = datetime.strptime(created, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    created_dt = datetime.strptime(created, "%d %B %Y")
+                    # created_dt = datetime.strptime(created, "%Y-%m-%dT%H:%M:%S.%fZ")
                     if created_dt >= six_months_ago:
                         avg_prices_by_date_range["last_6_months"]["totalPrice"] += price
                         avg_prices_by_date_range["last_6_months"]["count"] += 1
