@@ -21,16 +21,14 @@ def compute_avg_price_by_rooms(url):
         avg_prices_by_proptype = {}
         avg_prices_by_baths = {}
         avg_prices_by_date_range = {
-            "last_month": {"totalPrice": 0, "count": 0},
-            "last_3_months": {"totalPrice": 0, "count": 0},
-            "last_6_months": {"totalPrice": 0, "count": 0}
+            "last_1_year": {"totalPrice": 0, "count": 0},
+            "last_3_years": {"totalPrice": 0, "count": 0},
+            "more_than_3_years": {"totalPrice": 0, "count": 0}
         }
 
-        # Prepare cutoff dates
         now = datetime.utcnow()
-        one_month_ago = now - timedelta(days=30)
-        three_months_ago = now - timedelta(days=90)
-        six_months_ago = now - timedelta(days=180)
+        one_year_ago = now - timedelta(days=365)
+        three_years_ago = now - timedelta(days=3 * 365)
 
         for prop in properties:
             info = prop.get("info", {})
@@ -71,18 +69,18 @@ def compute_avg_price_by_rooms(url):
             if created:
                 try:
                     created_dt = datetime.strptime(created, "%d %B %Y")
-                    # created_dt = datetime.strptime(created, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    if created_dt >= six_months_ago:
-                        avg_prices_by_date_range["last_6_months"]["totalPrice"] += price
-                        avg_prices_by_date_range["last_6_months"]["count"] += 1
-                    if created_dt >= three_months_ago:
-                        avg_prices_by_date_range["last_3_months"]["totalPrice"] += price
-                        avg_prices_by_date_range["last_3_months"]["count"] += 1
-                    if created_dt >= one_month_ago:
-                        avg_prices_by_date_range["last_month"]["totalPrice"] += price
-                        avg_prices_by_date_range["last_month"]["count"] += 1
+                    if created_dt >= one_year_ago:
+                        avg_prices_by_date_range["last_1_year"]["totalPrice"] += price
+                        avg_prices_by_date_range["last_1_year"]["count"] += 1
+                    elif created_dt >= three_years_ago:
+                        avg_prices_by_date_range["last_3_years"]["totalPrice"] += price
+                        avg_prices_by_date_range["last_3_years"]["count"] += 1
+                    else:
+                        avg_prices_by_date_range["more_than_3_years"]["totalPrice"] += price
+                        avg_prices_by_date_range["more_than_3_years"]["count"] += 1
                 except ValueError:
-                    pass  # skip malformed date
+                    pass
+
 
         # Finalize average calculations
         for stats in avg_prices_by_rooms.values():
